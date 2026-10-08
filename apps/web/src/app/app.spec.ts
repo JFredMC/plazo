@@ -16,6 +16,10 @@ describe('Plazo', () => {
     const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelectorAll('nav a')).toHaveLength(5);
     expect(el.querySelector('[data-testid="disclaimer"]')?.textContent).toContain('ilustrativos');
+    const brand = el.querySelector<HTMLAnchorElement>('[data-testid="brand"]')!;
+    expect(brand.href).toBe('https://jfredmc.github.io/portfolio/');
+    expect(brand.target).toBe('_blank');
+    expect(brand.rel).toContain('noopener');
   });
 
   it('simula un crédito desde un enlace compartido', async () => {
