@@ -731,3 +731,6 @@ table.data .best {
     padding-bottom: 84px;
   }
 }
+.card-head.wrap {
+  flex-wrap: wrap;
+}

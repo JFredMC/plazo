@@ -410,13 +410,28 @@
         </section>
 
         <section class="card">
-          <div class="card-head">
+          <div class="card-head wrap">
             <div>
               <h3>Tabla de amortización</h3>
               <p>
                 {{ r.periods }} cuotas ·
                 {{ state().system === 'french' ? 'cuota fija' : 'abono constante a capital' }}
               </p>
+            </div>
+            <div class="toolbar no-print">
+              <button
+                type="button"
+                class="btn sm"
+                (click)="exportPdf(r)"
+                [disabled]="exporting()"
+                data-testid="export-pdf"
+              >
+                <i class="bi bi-filetype-pdf" aria-hidden="true"></i>
+                {{ exporting() ? 'Generando…' : 'PDF' }}
+              </button>
+              <button type="button" class="btn sm" (click)="exportCsv(r)" data-testid="export-csv">
+                <i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i> Excel (CSV)
+              </button>
             </div>
           </div>
           <app-amortization-table [result]="r" />

@@ -25,6 +25,7 @@ import {
   toLoanInput,
   type LoanState,
 } from '../../core/loan-state';
+import { exportScheduleCsv, exportSchedulePdf } from '../../core/export';
 import { SavedStore } from '../../core/saved.store';
 import { readJson, todayIso } from '../../core/storage';
 import { copyText, shareUrl, syncParamsToUrl } from '../../core/url-state';
@@ -260,6 +261,30 @@ export class LoanPage {
 
   protected removeExtra(index: number): void {
     this.state.update((s) => ({ ...s, extras: s.extras.filter((_, i) => i !== index) }));
+  }
+
+  protected readonly exporting = signal(false);
+
+  protected async exportPdf(result: LoanResult): Promise<void> {
+    this.exporting.set(true);
+    try {
+      const s = this.state();
+      await exportSchedulePdf(result, {
+        product: this.product().label,
+        rateText: `${formatPercent(s.rate / 100)} ${RATE_LABELS[s.kind].short}`,
+        url: shareUrl(this.params()),
+      });
+      this.toast.show('PDF descargado');
+    } catch {
+      this.toast.show('No se pudo generar el PDF');
+    } finally {
+      this.exporting.set(false);
+    }
+  }
+
+  protected exportCsv(result: LoanResult): void {
+    exportScheduleCsv(result);
+    this.toast.show('CSV descargado: ábrelo con Excel');
   }
 
   protected toResults(): void {

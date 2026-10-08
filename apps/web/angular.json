@@ -25,7 +25,8 @@
                 "input": "public"
               }
             ],
-            "styles": ["node_modules/bootstrap-icons/font/bootstrap-icons.css", "src/styles.css"]
+            "styles": ["node_modules/bootstrap-icons/font/bootstrap-icons.css", "src/styles.css"],
+            "allowedCommonJsDependencies": ["html2canvas", "core-js", "raf", "rgbcolor"]
           },
           "configurations": {
             "production": {
