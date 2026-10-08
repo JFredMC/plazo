@@ -84,6 +84,30 @@ main {
   align-items: center;
   gap: 8px;
 }
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px 0 7px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 12.5px;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+}
+.brand strong {
+  font-family: var(--font-brand);
+  font-weight: 600;
+  color: var(--text);
+}
+.brand:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
 .footer {
   border-top: 1px solid var(--line);
   padding: 18px 0 28px;
@@ -123,5 +147,13 @@ main {
   }
   .logo small {
     display: none;
+  }
+}
+@media (max-width: 420px) {
+  .brand span {
+    display: none;
+  }
+  .brand {
+    padding: 0 6px;
   }
 }
