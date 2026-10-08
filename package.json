@@ -1,0 +1,28 @@
+{
+  "name": "plazo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Plazo: simulador de créditos y CDT en pesos colombianos, con motor financiero en TypeScript y consola en Angular",
+  "license": "MIT",
+  "author": "Jhon Maquilon",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JFredMC/plazo.git"
+  },
+  "packageManager": "pnpm@10.34.6",
+  "engines": {
+    "node": ">=22.12.0",
+    "pnpm": ">=10"
+  },
+  "scripts": {
+    "build": "pnpm -r run build",
+    "lint": "pnpm -r run lint",
+    "typecheck": "pnpm -r run typecheck",
+    "test": "pnpm -r run test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.8.1"
+  }
+}
