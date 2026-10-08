@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Plazo">
+  <defs>
+    <linearGradient id="p" x1="12" y1="52" x2="52" y2="12" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22D3EE"/>
+      <stop offset="1" stop-color="#818CF8"/>
+    </linearGradient>
+  </defs>
+  <rect x="1.5" y="1.5" width="61" height="61" rx="16" fill="#0B1220" stroke="#22D3EE" stroke-width="1.5"/>
+  <rect x="14" y="36" width="8" height="14" rx="2.5" fill="url(#p)" opacity=".55"/>
+  <rect x="28" y="28" width="8" height="22" rx="2.5" fill="url(#p)" opacity=".8"/>
+  <rect x="42" y="18" width="8" height="32" rx="2.5" fill="url(#p)"/>
+  <path d="M13 29c8-1 16-6 23-13l3.5-3.5" fill="none" stroke="#EEF3FB" stroke-width="3" stroke-linecap="round"/>
+  <path d="M33 12h7v7" fill="none" stroke="#EEF3FB" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

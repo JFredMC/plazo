@@ -9,3 +9,4 @@ onlyBuiltDependencies:
 ignoredBuiltDependencies:
   - '@parcel/watcher'
   - unrs-resolver
+  - core-js

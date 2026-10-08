@@ -1,0 +1,434 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <h2>Simulador de crédito</h2>
+      <p>
+        Cuota, costo total y tabla de amortización. Escribe la tasa como te la dan (E.A., N.M.V. o
+        M.V.) y prueba abonos extra para ver cuánto te ahorras.
+      </p>
+    </div>
+    <div class="toolbar no-print">
+      <button type="button" class="btn" (click)="share()" data-testid="share">
+        <i class="bi bi-link-45deg" aria-hidden="true"></i> Copiar enlace
+      </button>
+      <button
+        type="button"
+        class="btn"
+        (click)="saveDialog.open()"
+        [disabled]="!outcome().ok"
+        data-testid="save"
+      >
+        <i class="bi bi-bookmark-plus" aria-hidden="true"></i> Guardar
+      </button>
+    </div>
+  </header>
+
+  <div class="split">
+    <form
+      class="card sticky form"
+      (submit)="$event.preventDefault()"
+      aria-label="Datos del crédito"
+    >
+      <div class="field">
+        <span class="label" id="product-label">Tipo de crédito</span>
+        <div class="chips" role="group" aria-labelledby="product-label">
+          @for (p of products; track p.id) {
+            <button
+              type="button"
+              class="chip"
+              [attr.aria-pressed]="state().product === p.id"
+              (click)="selectProduct(p.id)"
+              [attr.data-testid]="'product-' + p.id"
+            >
+              {{ p.label }}
+            </button>
+          }
+        </div>
+        <span class="hint">{{ product().description }}</span>
+      </div>
+
+      <div class="field">
+        <label for="principal">Monto</label>
+        <app-money
+          inputId="principal"
+          testId="principal"
+          [value]="state().principal"
+          (valueChange)="patch({ principal: $event })"
+          [invalid]="!state().principal"
+        />
+      </div>
+
+      <div class="field">
+        <label for="term">
+          Plazo <span class="hint">{{ state().termMonths | meses }}</span>
+        </label>
+        <div class="row">
+          <input
+            class="grow"
+            type="range"
+            aria-label="Plazo en meses"
+            [min]="product().minTerm"
+            [max]="product().maxTerm"
+            step="1"
+            [value]="state().termMonths"
+            (input)="setTerm(num($event))"
+          />
+          <div class="suffix term">
+            <input
+              id="term"
+              type="number"
+              class="num"
+              min="1"
+              max="600"
+              step="1"
+              [value]="state().termMonths"
+              (input)="setTerm(num($event))"
+              data-testid="term"
+            />
+            <span>meses</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="rate">Tasa de interés</label>
+        <div class="row">
+          <div class="suffix grow">
+            <input
+              id="rate"
+              type="number"
+              class="num"
+              min="0"
+              step="0.01"
+              inputmode="decimal"
+              [value]="state().rate"
+              (input)="patch({ rate: num($event) })"
+              data-testid="rate"
+            />
+            <span>%</span>
+          </div>
+          <div class="seg kinds" role="group" aria-label="Tipo de tasa">
+            @for (k of kinds; track k) {
+              <button
+                type="button"
+                [attr.aria-pressed]="state().kind === k"
+                (click)="setKind(k)"
+                [title]="rateLabels[k].long"
+                [attr.data-testid]="'kind-' + k"
+              >
+                {{ rateLabels[k].short }}
+              </button>
+            }
+          </div>
+        </div>
+        @if (equivalents(); as eq) {
+          <span class="hint" data-testid="equivalents">
+            Equivale a <b>{{ eq.EA | pct }} E.A.</b> · {{ eq.NMV | pct }} N.M.V. ·
+            {{ eq.MV | pct: 4 }} M.V.
+          </span>
+        }
+      </div>
+
+      <div class="field">
+        <span class="label" id="system-label">Sistema de amortización</span>
+        <div class="seg" role="group" aria-labelledby="system-label">
+          <button
+            type="button"
+            [attr.aria-pressed]="state().system === 'french'"
+            (click)="patch({ system: 'french' })"
+            data-testid="system-french"
+          >
+            Cuota fija
+          </button>
+          <button
+            type="button"
+            [attr.aria-pressed]="state().system === 'constant'"
+            (click)="patch({ system: 'constant' })"
+            data-testid="system-constant"
+          >
+            Abono constante
+          </button>
+        </div>
+        <span class="hint">
+          @if (state().system === 'french') {
+            Pagas lo mismo cada mes; al principio la mayor parte es interés.
+          } @else {
+            Abonas lo mismo a capital cada mes; la cuota empieza alta y va bajando.
+          }
+        </span>
+      </div>
+
+      <div class="field">
+        <label for="start">Fecha de desembolso</label>
+        <input
+          id="start"
+          type="date"
+          [value]="state().startDate"
+          (change)="$any($event.target).value && patch({ startDate: $any($event.target).value })"
+        />
+      </div>
+
+      <details
+        class="more"
+        [open]="state().insurancePerMillion || state().upfrontFee || state().monthlyFee"
+      >
+        <summary>
+          Seguros y cargos
+          <small>{{
+            state().insurancePerMillion || state().upfrontFee || state().monthlyFee
+              ? 'incluidos'
+              : 'sin cargos'
+          }}</small>
+        </summary>
+        <div class="field">
+          <label for="insurance"
+            >Seguro de vida deudores <span class="hint">por cada millón, al mes</span></label
+          >
+          <app-money
+            inputId="insurance"
+            testId="insurance"
+            [value]="state().insurancePerMillion"
+            (valueChange)="patch({ insurancePerMillion: $event })"
+          />
+          <div class="seg small" role="group" aria-label="Base del seguro">
+            <button
+              type="button"
+              [attr.aria-pressed]="state().insuranceBase === 'balance'"
+              (click)="patch({ insuranceBase: 'balance' })"
+            >
+              Sobre el saldo
+            </button>
+            <button
+              type="button"
+              [attr.aria-pressed]="state().insuranceBase === 'initial'"
+              (click)="patch({ insuranceBase: 'initial' })"
+            >
+              Sobre el monto inicial
+            </button>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="upfront">Cobro inicial</label>
+            <app-money
+              inputId="upfront"
+              testId="upfront"
+              [value]="state().upfrontFee"
+              (valueChange)="patch({ upfrontFee: $event })"
+            />
+          </div>
+          <div class="field">
+            <label for="monthly" [title]="product().monthlyFeeLabel">Cargo mensual</label>
+            <app-money
+              inputId="monthly"
+              testId="monthly-fee"
+              [value]="state().monthlyFee"
+              (valueChange)="patch({ monthlyFee: $event })"
+            />
+          </div>
+        </div>
+        <span class="hint block">
+          Cobro inicial: estudio de crédito, avalúo… Cargo mensual:
+          {{ product().monthlyFeeLabel | lowercase }}.
+        </span>
+      </details>
+
+      <details class="more" [open]="state().extras.length > 0" data-testid="extras">
+        <summary>
+          Abonos extraordinarios
+          <small>{{
+            state().extras.length ? state().extras.length + ' programados' : 'ninguno'
+          }}</small>
+        </summary>
+        @for (e of state().extras; track $index; let i = $index) {
+          <div class="extra" data-testid="extra-row">
+            <div class="suffix month">
+              <input
+                type="number"
+                class="num"
+                min="1"
+                [max]="state().termMonths"
+                [value]="e.month"
+                [attr.aria-label]="'Mes del abono ' + (i + 1)"
+                (input)="updateExtra(i, { month: num($event) })"
+              />
+              <span>mes</span>
+            </div>
+            <app-money
+              [label]="'Monto del abono ' + (i + 1)"
+              [value]="e.amount"
+              (valueChange)="updateExtra(i, { amount: $event })"
+            />
+            <select
+              [attr.aria-label]="'Qué reduce el abono ' + (i + 1)"
+              (change)="updateExtra(i, { strategy: $any($event.target).value })"
+            >
+              <option value="reduce-term" [selected]="e.strategy === 'reduce-term'">
+                Reducir plazo
+              </option>
+              <option value="reduce-installment" [selected]="e.strategy === 'reduce-installment'">
+                Reducir cuota
+              </option>
+            </select>
+            <button
+              type="button"
+              class="btn icon ghost danger"
+              (click)="removeExtra(i)"
+              [attr.aria-label]="'Quitar abono ' + (i + 1)"
+            >
+              <i class="bi bi-x-lg" aria-hidden="true"></i>
+            </button>
+          </div>
+        }
+        <div class="toolbar">
+          <button
+            type="button"
+            class="btn sm"
+            (click)="addExtra()"
+            [disabled]="state().extras.length >= maxExtras"
+            data-testid="add-extra"
+          >
+            <i class="bi bi-plus-lg" aria-hidden="true"></i> Agregar abono
+          </button>
+          <button type="button" class="btn sm" (click)="addPrima()" data-testid="add-prima">
+            <i class="bi bi-gift" aria-hidden="true"></i> Abonar la prima cada 6 meses
+          </button>
+        </div>
+      </details>
+
+      <button type="button" class="btn ghost sm reset" (click)="resetProduct()">
+        <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> Valores de ejemplo
+      </button>
+    </form>
+
+    <div class="stack">
+      @if (result(); as r) {
+        <button type="button" class="mobile-summary no-print" (click)="toResults()">
+          <span>{{ state().system === 'french' ? 'Pago mensual' : 'Primer pago' }}</span>
+          <b>{{ r.firstPayment | cop }}</b>
+          <i class="bi bi-arrow-down-circle" aria-hidden="true"></i>
+        </button>
+        <section class="card" aria-label="Resumen" id="resultado">
+          <div class="hero">
+            <div class="hero-figure">
+              <div class="label">
+                {{ state().system === 'french' ? 'Pago mensual' : 'Primer pago' }}
+              </div>
+              <div class="value" data-testid="payment">{{ r.firstPayment | cop }}</div>
+              <div class="sub">
+                Cuota {{ r.firstInstallment | cop }}
+                @if (r.firstPayment !== r.firstInstallment) {
+                  + seguros y cargos {{ r.firstPayment - r.firstInstallment | cop }}
+                }
+                @if (state().system === 'constant') {
+                  <br />Último pago {{ lastPayment() | cop }}
+                }
+              </div>
+            </div>
+            <div class="kpis">
+              <div class="kpi">
+                <div class="k">Total a pagar</div>
+                <div class="v" data-testid="total-paid">{{ r.totals.paid | cop }}</div>
+              </div>
+              <div class="kpi warn">
+                <div class="k">Intereses</div>
+                <div class="v" data-testid="total-interest">{{ r.totals.interest | cop }}</div>
+              </div>
+              <div class="kpi">
+                <div class="k">Costo total del crédito</div>
+                <div class="v" data-testid="total-cost">{{ r.totalCost | cop }}</div>
+                <div class="d">intereses + seguros + cargos</div>
+              </div>
+              <div class="kpi">
+                <div class="k" title="TIR de todo lo que pagas frente a lo que recibes">
+                  Costo efectivo anual <i class="bi bi-question-circle" aria-hidden="true"></i>
+                </div>
+                <div class="v" data-testid="effective-cost">
+                  {{ r.effectiveCost ? (r.effectiveCost.EA | pct) : '—' }}
+                </div>
+                <div class="d">tasa pactada {{ r.rates.EA | pct }} E.A.</div>
+              </div>
+              <div class="kpi">
+                <div class="k">Terminas de pagar</div>
+                <div class="v">{{ r.payoffDate | fecha }}</div>
+                <div class="d">{{ r.periods | meses }}</div>
+              </div>
+              @if (savings(); as sv) {
+                <div class="kpi good" data-testid="savings">
+                  <div class="k">Ahorro con abonos</div>
+                  <div class="v">{{ sv.cost | cop }}</div>
+                  <div class="d">
+                    {{ sv.months > 0 ? sv.months + ' meses menos' : 'cuota más baja' }}
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+          <div class="composition" aria-hidden="true">
+            @for (c of composition(); track c.label) {
+              <span [class]="c.cls" [style.width.%]="c.pct"></span>
+            }
+          </div>
+          <div class="legend">
+            @for (c of composition(); track c.label) {
+              <span><i [class]="c.cls"></i>{{ c.label }} {{ c.value | cop }}</span>
+            }
+          </div>
+        </section>
+
+        <section class="charts">
+          <div class="card">
+            <div class="card-head">
+              <h3>Saldo mes a mes</h3>
+              <div class="legend">
+                <span><i class="c-principal"></i>Saldo</span>
+                @if (savings()) {
+                  <span><i class="c-other"></i>Sin abonos</span>
+                }
+              </div>
+            </div>
+            <app-line-chart
+              [series]="balanceSeries()"
+              [xLabel]="monthLabel"
+              ariaLabel="Saldo del crédito mes a mes"
+            />
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <h3>Capital e intereses por año</h3>
+              <div class="legend">
+                <span><i class="c-principal"></i>Capital</span>
+                <span><i class="c-interest"></i>Intereses</span>
+              </div>
+            </div>
+            <app-bar-chart
+              [series]="yearSeries()"
+              [labels]="yearLabels()"
+              ariaLabel="Capital e intereses pagados por año"
+            />
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <h3>Tabla de amortización</h3>
+              <p>
+                {{ r.periods }} cuotas ·
+                {{ state().system === 'french' ? 'cuota fija' : 'abono constante a capital' }}
+              </p>
+            </div>
+          </div>
+          <app-amortization-table [result]="r" />
+        </section>
+      } @else {
+        <div class="alert" role="alert" data-testid="error">
+          <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+          {{ error() }}
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<app-save-dialog #saveDialog [defaultName]="defaultName()" (confirmed)="save($event)" />

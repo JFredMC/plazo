@@ -1,0 +1,68 @@
+<header class="topbar">
+  <div class="inner">
+    <a class="logo" routerLink="/credito" aria-label="Plazo, inicio">
+      <img src="favicon.svg" alt="" width="36" height="36" />
+      <span>
+        <strong>Plazo</strong>
+        <small>Créditos y CDT en pesos</small>
+      </span>
+    </a>
+
+    <nav class="nav" aria-label="Secciones">
+      @for (item of nav; track item.path) {
+        <a
+          [routerLink]="item.path"
+          routerLinkActive="active"
+          ariaCurrentWhenActive="page"
+          [attr.data-testid]="'nav-' + item.path.slice(1)"
+        >
+          <i class="bi" [class]="item.icon" aria-hidden="true"></i>
+          <span>{{ item.label }}</span>
+          @if (item.path === '/guardadas' && saved.items().length) {
+            <span class="count">{{ saved.items().length }}</span>
+          }
+        </a>
+      }
+    </nav>
+
+    <div class="actions">
+      <button
+        type="button"
+        class="btn icon ghost"
+        (click)="theme.toggle()"
+        [attr.aria-label]="theme.theme() === 'dark' ? 'Usar tema claro' : 'Usar tema oscuro'"
+        [title]="theme.theme() === 'dark' ? 'Tema claro' : 'Tema oscuro'"
+        data-testid="theme-toggle"
+      >
+        <i
+          class="bi"
+          [class.bi-sun]="theme.theme() === 'dark'"
+          [class.bi-moon-stars]="theme.theme() === 'light'"
+          aria-hidden="true"
+        ></i>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <router-outlet />
+</main>
+
+<footer class="footer">
+  <div class="inner">
+    <p class="disclaimer" data-testid="disclaimer">
+      <i class="bi bi-info-circle" aria-hidden="true"></i>
+      Resultados ilustrativos. No son una oferta, cotización ni asesoría financiera. Las entidades y
+      tasas de ejemplo son ficticias; la tasa, los seguros y los cargos reales los fija cada
+      entidad.
+    </p>
+    <p class="muted small">
+      © {{ year }} Plazo · Todo se calcula en tu navegador; nada sale de tu equipo.
+    </p>
+  </div>
+</footer>
+
+@if (toast.message(); as msg) {
+  <div class="toast" role="status" data-testid="toast">{{ msg }}</div>
+}

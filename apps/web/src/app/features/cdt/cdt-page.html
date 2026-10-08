@@ -1,0 +1,314 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <h2>Simulador de CDT</h2>
+      <p>
+        Cuánto recibes al vencimiento después de la retención en la fuente y, si aplica, el 4×1000.
+        Compara también varios plazos con el mismo monto.
+      </p>
+    </div>
+    <div class="toolbar no-print">
+      <button type="button" class="btn" (click)="share()" data-testid="share">
+        <i class="bi bi-link-45deg" aria-hidden="true"></i> Copiar enlace
+      </button>
+      <button
+        type="button"
+        class="btn"
+        (click)="saveDialog.open()"
+        [disabled]="!result()"
+        data-testid="save"
+      >
+        <i class="bi bi-bookmark-plus" aria-hidden="true"></i> Guardar
+      </button>
+    </div>
+  </header>
+
+  <div class="split">
+    <form class="card sticky" (submit)="$event.preventDefault()" aria-label="Datos del CDT">
+      <div class="field">
+        <label for="amount">Monto a invertir</label>
+        <app-money
+          inputId="amount"
+          testId="cdt-amount"
+          [value]="state().amount"
+          (valueChange)="patch({ amount: $event })"
+          [invalid]="!state().amount"
+        />
+      </div>
+
+      <div class="field">
+        <label for="days">Plazo</label>
+        <div class="chips" role="group" aria-label="Plazos frecuentes">
+          @for (d of shortcuts; track d) {
+            <button
+              type="button"
+              class="chip"
+              [attr.aria-pressed]="state().days === d"
+              (click)="patch({ days: d })"
+            >
+              {{ d }} días
+            </button>
+          }
+        </div>
+        <div class="suffix">
+          <input
+            id="days"
+            type="number"
+            class="num"
+            min="1"
+            max="3650"
+            step="1"
+            [value]="state().days"
+            (input)="patch({ days: num($event) })"
+            data-testid="cdt-days"
+          />
+          <span>días</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="cdt-rate">Tasa efectiva anual (E.A.)</label>
+        <div class="suffix">
+          <input
+            id="cdt-rate"
+            type="number"
+            class="num"
+            min="0"
+            step="0.01"
+            inputmode="decimal"
+            [value]="state().rate"
+            (input)="patch({ rate: num($event) })"
+            data-testid="cdt-rate"
+          />
+          <span>% E.A.</span>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="withholding">Retención en la fuente</label>
+          <div class="suffix">
+            <input
+              id="withholding"
+              type="number"
+              class="num"
+              min="0"
+              max="99"
+              step="0.1"
+              [value]="state().withholding"
+              (input)="patch({ withholding: num($event) })"
+              data-testid="cdt-withholding"
+            />
+            <span>%</span>
+          </div>
+        </div>
+        <div class="field">
+          <span class="label" id="base-label">Base de días</span>
+          <div class="seg" role="group" aria-labelledby="base-label">
+            <button
+              type="button"
+              [attr.aria-pressed]="state().dayBase === 365"
+              (click)="patch({ dayBase: 365 })"
+            >
+              365
+            </button>
+            <button
+              type="button"
+              [attr.aria-pressed]="state().dayBase === 360"
+              (click)="patch({ dayBase: 360 })"
+            >
+              360
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <label class="switch field">
+        <span>
+          Cobrar 4×1000 (GMF)
+          <span class="hint block-hint"
+            >Si el dinero sale de una cuenta que no está marcada como exenta.</span
+          >
+        </span>
+        <input
+          type="checkbox"
+          [checked]="state().gmf"
+          (change)="patch({ gmf: $any($event.target).checked })"
+          data-testid="cdt-gmf"
+        />
+      </label>
+
+      <div class="field">
+        <label for="opening">Fecha de apertura</label>
+        <input
+          id="opening"
+          type="date"
+          [value]="state().startDate"
+          (change)="$any($event.target).value && patch({ startDate: $any($event.target).value })"
+        />
+      </div>
+
+      <p class="note">
+        La retención en la fuente sobre rendimientos financieros es del 4 % de los intereses. Es un
+        anticipo del impuesto de renta: puedes descontarla en tu declaración.
+      </p>
+
+      <button type="button" class="btn ghost sm reset" (click)="reset()">
+        <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> Valores de ejemplo
+      </button>
+    </form>
+
+    <div class="stack">
+      @if (result(); as r) {
+        <button type="button" class="mobile-summary no-print" (click)="toResults()">
+          <span>Recibes</span>
+          <b>{{ r.maturityAmount | cop }}</b>
+          <i class="bi bi-arrow-down-circle" aria-hidden="true"></i>
+        </button>
+        <section class="card" aria-label="Resultado del CDT" id="resultado">
+          <div class="hero">
+            <div class="hero-figure">
+              <div class="label">Recibes al vencimiento</div>
+              <div class="value" data-testid="maturity">{{ r.maturityAmount | cop }}</div>
+              <div class="sub">el {{ r.maturityDate | fecha }} · {{ r.days }} días</div>
+            </div>
+            <div class="kpis">
+              <div class="kpi good">
+                <div class="k">Ganancia neta</div>
+                <div class="v" data-testid="net-return">{{ r.netReturn | cop }}</div>
+                <div class="d">después de retención{{ r.gmf ? ' y 4×1000' : '' }}</div>
+              </div>
+              <div class="kpi">
+                <div class="k">Intereses brutos</div>
+                <div class="v" data-testid="gross">{{ r.grossInterest | cop }}</div>
+                <div class="d">tasa del período {{ r.periodRate | pct: 4 }}</div>
+              </div>
+              <div class="kpi">
+                <div class="k">Retención en la fuente</div>
+                <div class="v" data-testid="withholding">{{ r.withholding | cop }}</div>
+                <div class="d">{{ state().withholding }} % de los intereses</div>
+              </div>
+              <div class="kpi">
+                <div class="k">4×1000</div>
+                <div class="v" data-testid="gmf">{{ r.gmf | cop }}</div>
+                <div class="d">{{ r.gmf ? 'sobre el monto' : 'no aplica' }}</div>
+              </div>
+              <div class="kpi">
+                <div class="k">Rentabilidad neta</div>
+                <div class="v" data-testid="net-ea">{{ r.netEA | pct }} E.A.</div>
+                <div class="d">vs. {{ r.rateEA | pct }} E.A. bruta</div>
+              </div>
+            </div>
+          </div>
+          <div class="composition" aria-hidden="true">
+            @for (c of breakdown(); track c.label) {
+              <span [class]="c.cls" [style.width.%]="c.pct"></span>
+            }
+          </div>
+          <div class="legend">
+            @for (c of breakdown(); track c.label) {
+              <span><i [class]="c.cls"></i>{{ c.label }} {{ c.value | cop }}</span>
+            }
+          </div>
+        </section>
+      } @else {
+        <div class="alert" role="alert" data-testid="error">
+          <i class="bi bi-exclamation-triangle" aria-hidden="true"></i> {{ error() }}
+        </div>
+      }
+
+      <section class="card" aria-label="Comparar plazos">
+        <div class="card-head">
+          <div>
+            <h3>Comparar plazos</h3>
+            <p>
+              Mismo monto en varios plazos. Edita las tasas con las que te ofrezcan (estas son de
+              ejemplo).
+            </p>
+          </div>
+        </div>
+        @if (terms(); as t) {
+          <div class="table-wrap">
+            <table class="data terms" data-testid="terms">
+              <thead>
+                <tr>
+                  <th scope="col">Plazo</th>
+                  <th scope="col">Tasa E.A.</th>
+                  <th scope="col">Ganancia neta</th>
+                  <th scope="col" class="bar-col">&nbsp;</th>
+                  <th scope="col">Rentabilidad neta</th>
+                  <th scope="col"><span class="sr-only">Usar</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of t.results; track $index; let i = $index) {
+                  <tr>
+                    <td>
+                      <div class="suffix cell">
+                        <input
+                          type="number"
+                          class="num"
+                          min="1"
+                          max="3650"
+                          [value]="state().terms[i]?.days"
+                          [attr.aria-label]="'Días del plazo ' + (i + 1)"
+                          (input)="updateTerm(i, { days: num($event) })"
+                        />
+                        <span>días</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="suffix cell">
+                        <input
+                          type="number"
+                          class="num"
+                          min="0"
+                          step="0.01"
+                          [value]="state().terms[i]?.rate"
+                          [attr.aria-label]="'Tasa del plazo ' + (i + 1)"
+                          (input)="updateTerm(i, { rate: num($event) })"
+                        />
+                        <span>%</span>
+                      </div>
+                    </td>
+                    <td [class.best]="t.bestNetReturn === i">{{ row.netReturn | cop }}</td>
+                    <td class="bar-col">
+                      <span
+                        class="bar"
+                        [style.width.%]="(row.netReturn / maxTermReturn()) * 100"
+                      ></span>
+                    </td>
+                    <td [class.best]="t.bestNetEA === i">
+                      {{ row.netEA | pct }}
+                      @if (t.bestNetEA === i) {
+                        <span class="badge">Mejor</span>
+                      }
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        class="btn sm ghost"
+                        (click)="useTerm(i)"
+                        [attr.aria-label]="'Simular el plazo de ' + row.days + ' días'"
+                      >
+                        Simular
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <p class="muted small-note">
+            Más días suelen dar más pesos, pero la rentabilidad neta E.A. dice qué plazo paga mejor
+            por cada año invertido.
+          </p>
+        } @else {
+          <p class="muted">Revisa los plazos y las tasas de la tabla.</p>
+        }
+      </section>
+    </div>
+  </div>
+</section>
+
+<app-save-dialog #saveDialog [defaultName]="defaultName()" (confirmed)="save($event)" />

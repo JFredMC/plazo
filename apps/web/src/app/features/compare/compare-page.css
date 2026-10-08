@@ -1,0 +1,119 @@
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.top .mode {
+  width: 260px;
+}
+.top .mode button {
+  padding: 8px 12px;
+}
+.field.inline {
+  margin: 0;
+  width: 220px;
+}
+.field.inline.small {
+  width: 110px;
+}
+.switch.inline {
+  height: 40px;
+}
+.toolbar.end {
+  margin-left: auto;
+}
+.offers {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+@media (max-width: 960px) {
+  .offers {
+    grid-template-columns: 1fr;
+  }
+  .top .mode,
+  .field.inline {
+    width: 100%;
+  }
+  .toolbar.end {
+    margin-left: 0;
+  }
+}
+.offer {
+  position: relative;
+  transition: border-color 0.2s;
+}
+.offer.winner {
+  border-color: color-mix(in srgb, var(--ok) 60%, var(--line));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--ok) 25%, transparent),
+    var(--shadow);
+}
+.offer-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.offer-head .name {
+  font: 700 15px var(--font-brand);
+  background: transparent;
+  border-color: transparent;
+  padding: 0 6px;
+  margin-left: -6px;
+}
+.offer-head .name:hover {
+  border-color: var(--line);
+}
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 22px;
+  margin: 4px 0 12px;
+}
+.kind {
+  width: 96px;
+  flex: none;
+}
+.seg.small button {
+  font-size: 12px;
+  padding: 5px 8px;
+}
+.result {
+  margin: 14px 0 0;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  display: grid;
+  gap: 6px;
+}
+.result div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.result dt {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.result dd {
+  margin: 0;
+  font: 600 13.5px var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.result .em dd {
+  font-size: 16px;
+  color: var(--accent);
+}
+.offer.winner .result .em dd {
+  color: var(--ok);
+}
+.verdict {
+  margin-top: 10px;
+  font-size: 13px;
+}
+.verdict i {
+  color: var(--interest);
+}

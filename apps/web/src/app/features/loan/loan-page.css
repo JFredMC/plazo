@@ -1,0 +1,57 @@
+.form .term {
+  width: 120px;
+  flex: none;
+}
+.kinds {
+  flex: none;
+}
+.kinds button {
+  padding: 6px 8px;
+}
+.seg.small button {
+  font-size: 12px;
+  padding: 5px 8px;
+}
+.field .seg.small {
+  margin-top: 6px;
+}
+.hint.block {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin: -4px 0 8px;
+}
+.extra {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed var(--line);
+}
+.extra select {
+  grid-column: 1 / 2;
+}
+.extra select,
+.extra .btn {
+  height: 36px;
+}
+.extra .btn {
+  justify-self: end;
+}
+.extra .month input {
+  padding-right: 38px;
+}
+.reset {
+  margin-top: 12px;
+}
+.charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 1100px) {
+  .charts {
+    grid-template-columns: 1fr;
+  }
+}
