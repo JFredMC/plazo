@@ -1,0 +1,402 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <h2>Comparar ofertas</h2>
+      <p>
+        Pon lado a lado hasta tres ofertas. En créditos manda el <b>costo efectivo anual</b>, que
+        incluye seguros y cargos; en CDT, la <b>rentabilidad neta</b>. Las entidades son ficticias.
+      </p>
+    </div>
+    <div class="toolbar no-print">
+      <button type="button" class="btn" (click)="share()" data-testid="share">
+        <i class="bi bi-link-45deg" aria-hidden="true"></i> Copiar enlace
+      </button>
+      <button type="button" class="btn" (click)="saveDialog.open()" data-testid="save">
+        <i class="bi bi-bookmark-plus" aria-hidden="true"></i> Guardar
+      </button>
+    </div>
+  </header>
+
+  <div class="top card">
+    <div class="seg mode" role="group" aria-label="Qué comparar">
+      <button
+        type="button"
+        [attr.aria-pressed]="state().mode === 'credito'"
+        (click)="patch({ mode: 'credito' })"
+        data-testid="mode-credito"
+      >
+        <i class="bi bi-house-door" aria-hidden="true"></i> Créditos
+      </button>
+      <button
+        type="button"
+        [attr.aria-pressed]="state().mode === 'cdt'"
+        (click)="patch({ mode: 'cdt' })"
+        data-testid="mode-cdt"
+      >
+        <i class="bi bi-piggy-bank" aria-hidden="true"></i> CDT
+      </button>
+    </div>
+    @if (state().mode === 'credito') {
+      <div class="field inline">
+        <label for="cmp-principal">Monto del crédito</label>
+        <app-money
+          inputId="cmp-principal"
+          testId="cmp-principal"
+          [value]="state().principal"
+          (valueChange)="patch({ principal: $event })"
+        />
+      </div>
+    } @else {
+      <div class="field inline">
+        <label for="cmp-amount">Monto a invertir</label>
+        <app-money
+          inputId="cmp-amount"
+          [value]="state().amount"
+          (valueChange)="patch({ amount: $event })"
+        />
+      </div>
+      <div class="field inline small">
+        <label for="cmp-ret">Retención</label>
+        <div class="suffix">
+          <input
+            id="cmp-ret"
+            type="number"
+            class="num"
+            min="0"
+            max="99"
+            step="0.1"
+            [value]="state().withholding"
+            (input)="patch({ withholding: num($event) })"
+          />
+          <span>%</span>
+        </div>
+      </div>
+      <label class="switch inline gmf">
+        <span>4×1000</span>
+        <input
+          type="checkbox"
+          [checked]="state().gmf"
+          (change)="patch({ gmf: $any($event.target).checked })"
+        />
+      </label>
+    }
+    <div class="toolbar end">
+      <button
+        type="button"
+        class="btn sm"
+        (click)="addOffer()"
+        [disabled]="
+          (state().mode === 'credito' ? state().loans.length : state().cdts.length) >= max
+        "
+        data-testid="add-offer"
+      >
+        <i class="bi bi-plus-lg" aria-hidden="true"></i> Agregar oferta
+      </button>
+      <button type="button" class="btn sm ghost" (click)="reset()">
+        <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> Ejemplo
+      </button>
+    </div>
+  </div>
+
+  @if (state().mode === 'credito') {
+    <div class="offers" [style.--cols]="state().loans.length" data-testid="loan-offers">
+      @for (o of state().loans; track $index; let i = $index) {
+        @let res = loans()?.offers?.[i]?.result;
+        <article
+          class="card offer"
+          [class.winner]="loans()?.bestEffectiveCost === i"
+          data-testid="offer"
+        >
+          <div class="offer-head">
+            <input
+              class="name"
+              type="text"
+              maxlength="40"
+              [value]="o.name"
+              (input)="updateLoan(i, { name: text($event) })"
+              [attr.aria-label]="'Nombre de la oferta ' + (i + 1)"
+            />
+            @if (state().loans.length > min) {
+              <button
+                type="button"
+                class="btn icon ghost danger"
+                (click)="removeOffer(i)"
+                [attr.aria-label]="'Quitar oferta ' + (i + 1)"
+              >
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
+              </button>
+            }
+          </div>
+          <div class="badges">
+            @if (loans()?.bestEffectiveCost === i) {
+              <span class="badge" data-testid="best">Menor costo efectivo</span>
+            }
+            @if (loans()?.lowestFirstPayment === i) {
+              <span class="badge info">Menor cuota</span>
+            }
+          </div>
+          <div class="field">
+            <span class="label">Tasa</span>
+            <div class="row">
+              <div class="suffix grow">
+                <input
+                  type="number"
+                  class="num"
+                  min="0"
+                  step="0.01"
+                  [value]="o.rate"
+                  (input)="updateLoan(i, { rate: num($event) })"
+                  [attr.aria-label]="'Tasa de la oferta ' + (i + 1)"
+                />
+                <span>%</span>
+              </div>
+              <select
+                class="kind"
+                [value]="o.kind"
+                (change)="updateLoan(i, { kind: $any($event.target).value })"
+                [attr.aria-label]="'Tipo de tasa de la oferta ' + (i + 1)"
+              >
+                @for (k of kinds; track k) {
+                  <option [value]="k" [selected]="o.kind === k">{{ rateLabels[k].short }}</option>
+                }
+              </select>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <span class="label">Plazo</span>
+              <div class="suffix">
+                <input
+                  type="number"
+                  class="num"
+                  min="1"
+                  max="600"
+                  [value]="o.termMonths"
+                  (input)="updateLoan(i, { termMonths: num($event) })"
+                  [attr.aria-label]="'Plazo de la oferta ' + (i + 1)"
+                />
+                <span>meses</span>
+              </div>
+            </div>
+            <div class="field">
+              <span class="label">Seguro por millón</span>
+              <app-money
+                [label]="'Seguro por millón de la oferta ' + (i + 1)"
+                [value]="o.insurancePerMillion"
+                (valueChange)="updateLoan(i, { insurancePerMillion: $event })"
+              />
+            </div>
+            <div class="field">
+              <span class="label">Cobro inicial</span>
+              <app-money
+                [label]="'Cobro inicial de la oferta ' + (i + 1)"
+                [value]="o.upfrontFee"
+                (valueChange)="updateLoan(i, { upfrontFee: $event })"
+              />
+            </div>
+            <div class="field">
+              <span class="label">Cargo mensual</span>
+              <app-money
+                [label]="'Cargo mensual de la oferta ' + (i + 1)"
+                [value]="o.monthlyFee"
+                (valueChange)="updateLoan(i, { monthlyFee: $event })"
+              />
+            </div>
+          </div>
+          <div class="seg small" role="group" [attr.aria-label]="'Sistema de la oferta ' + (i + 1)">
+            <button
+              type="button"
+              [attr.aria-pressed]="o.system === 'french'"
+              (click)="updateLoan(i, { system: 'french' })"
+            >
+              Cuota fija
+            </button>
+            <button
+              type="button"
+              [attr.aria-pressed]="o.system === 'constant'"
+              (click)="updateLoan(i, { system: 'constant' })"
+            >
+              Abono constante
+            </button>
+          </div>
+          @if (res) {
+            <dl class="result">
+              <div>
+                <dt>Primer pago</dt>
+                <dd>{{ res.firstPayment | cop }}</dd>
+              </div>
+              <div>
+                <dt>Total a pagar</dt>
+                <dd>{{ res.totals.paid | cop }}</dd>
+              </div>
+              <div>
+                <dt>Costo total</dt>
+                <dd>{{ res.totalCost | cop }}</dd>
+              </div>
+              <div class="em">
+                <dt>Costo efectivo anual</dt>
+                <dd data-testid="offer-effective">
+                  {{ res.effectiveCost ? (res.effectiveCost.EA | pct) : '—' }}
+                </dd>
+              </div>
+              <div>
+                <dt>Tasa equivalente</dt>
+                <dd>{{ res.rates.EA | pct }} E.A.</dd>
+              </div>
+            </dl>
+          }
+        </article>
+      }
+    </div>
+    @if (loans(); as c) {
+      <section class="card">
+        <div class="card-head">
+          <h3>¿Cuánto cuesta cada oferta?</h3>
+          <div class="legend">
+            <span><i class="c-interest"></i>Intereses</span>
+            <span><i class="c-other"></i>Seguros y cargos</span>
+          </div>
+        </div>
+        <app-bar-chart
+          [series]="loanChart().series"
+          [labels]="loanChart().labels"
+          [height]="220"
+          ariaLabel="Costo total de cada oferta"
+        />
+        <p class="muted verdict" data-testid="verdict">
+          <i class="bi bi-trophy" aria-hidden="true"></i>
+          {{ c.offers[c.bestEffectiveCost]?.offer?.name }} sale más barata en costo efectivo ({{
+            c.offers[c.bestEffectiveCost]?.result?.effectiveCost?.EA ?? 0 | pct
+          }}
+          E.A.).
+          @if (c.lowestFirstPayment !== c.bestEffectiveCost) {
+            {{ c.offers[c.lowestFirstPayment]?.offer?.name }} tiene la cuota más baja, pero a la
+            larga pagas más.
+          }
+        </p>
+      </section>
+    } @else {
+      <div class="alert" role="alert">{{ loanError() }}</div>
+    }
+  } @else {
+    <div class="offers" [style.--cols]="state().cdts.length" data-testid="cdt-offers">
+      @for (o of state().cdts; track $index; let i = $index) {
+        @let res = cdts()?.offers?.[i]?.result;
+        <article class="card offer" [class.winner]="cdts()?.bestNetEA === i" data-testid="offer">
+          <div class="offer-head">
+            <input
+              class="name"
+              type="text"
+              maxlength="40"
+              [value]="o.name"
+              (input)="updateCdt(i, { name: text($event) })"
+              [attr.aria-label]="'Nombre de la oferta ' + (i + 1)"
+            />
+            @if (state().cdts.length > min) {
+              <button
+                type="button"
+                class="btn icon ghost danger"
+                (click)="removeOffer(i)"
+                [attr.aria-label]="'Quitar oferta ' + (i + 1)"
+              >
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
+              </button>
+            }
+          </div>
+          <div class="badges">
+            @if (cdts()?.bestNetEA === i) {
+              <span class="badge" data-testid="best">Mejor rentabilidad</span>
+            }
+            @if (cdts()?.bestNetReturn === i) {
+              <span class="badge info">Más pesos</span>
+            }
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <span class="label">Tasa E.A.</span>
+              <div class="suffix">
+                <input
+                  type="number"
+                  class="num"
+                  min="0"
+                  step="0.01"
+                  [value]="o.rate"
+                  (input)="updateCdt(i, { rate: num($event) })"
+                  [attr.aria-label]="'Tasa de la oferta ' + (i + 1)"
+                />
+                <span>%</span>
+              </div>
+            </div>
+            <div class="field">
+              <span class="label">Plazo</span>
+              <div class="suffix">
+                <input
+                  type="number"
+                  class="num"
+                  min="1"
+                  max="3650"
+                  [value]="o.days"
+                  (input)="updateCdt(i, { days: num($event) })"
+                  [attr.aria-label]="'Plazo de la oferta ' + (i + 1)"
+                />
+                <span>días</span>
+              </div>
+            </div>
+          </div>
+          @if (res) {
+            <dl class="result">
+              <div>
+                <dt>Intereses brutos</dt>
+                <dd>{{ res.grossInterest | cop }}</dd>
+              </div>
+              <div>
+                <dt>Retención</dt>
+                <dd>{{ res.withholding | cop }}</dd>
+              </div>
+              <div>
+                <dt>Ganancia neta</dt>
+                <dd>{{ res.netReturn | cop }}</dd>
+              </div>
+              <div>
+                <dt>Recibes</dt>
+                <dd>{{ res.maturityAmount | cop }}</dd>
+              </div>
+              <div class="em">
+                <dt>Rentabilidad neta</dt>
+                <dd data-testid="offer-net-ea">{{ res.netEA | pct }} E.A.</dd>
+              </div>
+            </dl>
+          }
+        </article>
+      }
+    </div>
+    @if (cdts(); as c) {
+      <section class="card">
+        <div class="card-head">
+          <h3>¿Cuánto gana cada CDT?</h3>
+          <div class="legend">
+            <span><i class="c-principal"></i>Ganancia neta</span>
+            <span><i class="c-tax"></i>Retención y 4×1000</span>
+          </div>
+        </div>
+        <app-bar-chart
+          [series]="cdtChart().series"
+          [labels]="cdtChart().labels"
+          [height]="220"
+          ariaLabel="Ganancia de cada CDT"
+        />
+        <p class="muted verdict" data-testid="verdict">
+          <i class="bi bi-trophy" aria-hidden="true"></i>
+          {{ c.offers[c.bestNetEA]?.offer?.name }} paga la mejor rentabilidad neta ({{
+            c.offers[c.bestNetEA]?.result?.netEA ?? 0 | pct
+          }}
+          E.A.).
+        </p>
+      </section>
+    } @else {
+      <div class="alert" role="alert">Revisa los montos, tasas y plazos.</div>
+    }
+  }
+</section>
+
+<app-save-dialog #saveDialog [defaultName]="defaultName()" (confirmed)="save($event)" />

@@ -249,9 +249,7 @@ export function extraPaymentSavings(input: LoanInput): {
 }
 
 /** Capital e intereses pagados por año del crédito (para gráficas). */
-export function yearlyBreakdown(
-  rows: readonly AmortizationRow[],
-): {
+export function yearlyBreakdown(rows: readonly AmortizationRow[]): {
   year: number;
   principal: number;
   interest: number;

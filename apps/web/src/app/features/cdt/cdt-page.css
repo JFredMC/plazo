@@ -1,0 +1,40 @@
+.chips {
+  margin-bottom: 6px;
+}
+.block-hint {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.reset {
+  margin-top: 12px;
+}
+.note {
+  margin-bottom: 4px;
+}
+.terms .cell {
+  width: 116px;
+  margin-left: auto;
+}
+.terms .cell input {
+  height: 32px;
+  padding-right: 44px;
+}
+.terms td:first-child .cell {
+  margin-left: 0;
+}
+.bar-col {
+  width: 22%;
+  min-width: 80px;
+}
+.bar {
+  display: block;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+}
+.small-note {
+  font-size: 12px;
+  margin-top: 10px;
+}
